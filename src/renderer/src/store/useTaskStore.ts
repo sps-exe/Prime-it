@@ -9,17 +9,41 @@ import { v4 as uuidv4 } from 'uuid';
 // IPC Storage Adapter (Reused)
 const storage: StateStorage = {
     getItem: async (name: string): Promise<string | null> => {
-        const value = await (window as any).ipcRenderer.getStoreValue(name);
-        return value ? JSON.stringify(value) : null;
+        try {
+            if (!(window as any).ipcRenderer) return null;
+            const value = await (window as any).ipcRenderer.getStoreValue(name);
+            return value ? JSON.stringify(value) : null;
+        } catch (e) {
+            console.error('Storage Get Error', e);
+            return null;
+        }
     },
     setItem: async (name: string, value: string): Promise<void> => {
-        const parsed = JSON.parse(value);
-        await (window as any).ipcRenderer.setStoreValue(name, parsed);
+        try {
+            if (!(window as any).ipcRenderer) return;
+            const parsed = JSON.parse(value);
+            await (window as any).ipcRenderer.setStoreValue(name, parsed);
+        } catch (e) {
+            console.error('Storage Set Error', e);
+        }
     },
     removeItem: async (name: string): Promise<void> => {
-        await (window as any).ipcRenderer.setStoreValue(name, undefined);
+        try {
+            if (!(window as any).ipcRenderer) return;
+            await (window as any).ipcRenderer.setStoreValue(name, undefined);
+        } catch (e) {
+            console.error('Storage Remove Error', e);
+        }
     },
 }
+
+const getLocalToday = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export const useTaskStore = create<TaskState>()(
     persist(
@@ -37,7 +61,7 @@ export const useTaskStore = create<TaskState>()(
                 duration: 25 * 60
             },
             todayFocusTime: 0,
-            lastActiveDate: new Date().toISOString().split('T')[0],
+            lastActiveDate: getLocalToday(),
 
             // Reports Data
             sessions: [],
@@ -193,7 +217,7 @@ export const useTaskStore = create<TaskState>()(
 
             tickTimer: () => set((state) => {
                 const { remaining, mode, isRunning } = state.timerState;
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalToday();
                 let { todayFocusTime, lastActiveDate } = state;
 
                 // Check for day change
@@ -249,7 +273,7 @@ export const useTaskStore = create<TaskState>()(
             setTaskDone: (taskId) => set((state) => {
                 const task = state.tasks.find(t => t.id === taskId);
                 const now = Date.now();
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalToday();
 
                 // Calculate focus time for this session
                 const focusTime = task ? (task.duration || 25) * 60 - state.timerState.remaining : 0;
@@ -354,7 +378,7 @@ export const useTaskStore = create<TaskState>()(
             logSession: (taskId, focusTime) => set((state) => {
                 const task = state.tasks.find(t => t.id === taskId);
                 const now = Date.now();
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalToday();
 
                 const newSession: FocusSession = {
                     id: uuidv4(),
@@ -438,16 +462,22 @@ export const useTaskStore = create<TaskState>()(
             userTier: 'free',
             setTier: (tier) => set({ userTier: tier }),
             isPremium: (): boolean => {
-                // Access state directly via get() is not available here in this scope structure efficiently
-                // We'll rely on the component using the selector state.userTier
-                // But wait, this is inside the store creator.
-                // We need to change isPremium to be a selector or just use the raw state in components.
-                // Actually, let's just make it a simple boolean check in the store actions if needed,
-                // but for UI, we can just check state.userTier === 'pro'.
-                // To keep the API clean, we'll implement it as:
-                const tier: string = (useTaskStore.getState?.() as any)?.userTier || 'free';
+                const tier = (useTaskStore.getState?.() as any)?.userTier || 'free';
                 return tier === 'pro' || tier === 'lifetime';
-            }
+            },
+
+            markDailyLogin: () => set((state) => {
+                const today = getLocalToday();
+                const dailyFocusHistory = { ...state.dailyFocusHistory };
+
+                // If today has less than 1 minute of activity, set it to 1 minute (60s)
+                // This ensures the heatmap shows green for the day just by logging in.
+                if ((dailyFocusHistory[today] || 0) < 60) {
+                    dailyFocusHistory[today] = 60;
+                }
+
+                return { dailyFocusHistory };
+            })
         }),
         {
             name: 'prime-it-task-storage',

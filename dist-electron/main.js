@@ -28376,7 +28376,7 @@ function createWindow() {
   console.log("[MAIN] Creating BrowserWindow...");
   console.log("[MAIN] Preload path:", path$m.join(__dirname$1, "index.mjs"));
   win = new BrowserWindow({
-    icon: path$m.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: path$m.join(process.env.VITE_PUBLIC, "icon.png"),
     width: 1200,
     height: 800,
     titleBarStyle: "hidden",

@@ -65,7 +65,7 @@ function createWindow() {
   console.log('[MAIN] Preload path:', path.join(__dirname, 'index.mjs'));
 
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    icon: path.join(process.env.VITE_PUBLIC, 'icon.png'),
     width: 1200,
     height: 800,
     titleBarStyle: 'hidden',  // Hide title bar completely

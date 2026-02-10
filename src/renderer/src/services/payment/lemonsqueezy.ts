@@ -14,7 +14,9 @@
  */
 
 // Configuration - Replace with your LemonSqueezy checkout URL
-const CHECKOUT_URL = import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_URL || '';
+const MONTHLY_URL = import.meta.env.VITE_LEMONSQUEEZY_MONTHLY_URL || '';
+const YEARLY_URL = import.meta.env.VITE_LEMONSQUEEZY_YEARLY_URL || '';
+const CHECKOUT_URL = MONTHLY_URL || YEARLY_URL; // Fallback for legacy checks
 
 export interface PaymentConfig {
     checkoutUrl: string;
@@ -71,21 +73,38 @@ export function getCheckoutUrl(): string {
     return CHECKOUT_URL;
 }
 
+import { supabase } from '../../lib/supabase';
+
 /**
  * Verify subscription status from Supabase
  * This should be called on app load to sync tier
  */
 export async function verifySubscription(userId: string): Promise<'free' | 'pro' | 'lifetime'> {
-    // TODO: Implement Supabase query to check subscription status
-    // For now, return 'free' as default
-    // 
-    // In production, this would:
-    // 1. Query Supabase 'subscriptions' table for user's active subscription
-    // 2. Return appropriate tier based on subscription status
-    // 3. Handle expired subscriptions
-
     console.log('[Payment] Checking subscription for user:', userId);
 
-    // Placeholder - will be implemented with Supabase integration
-    return 'free';
+    try {
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            // It's normal to have no subscription, don't log as error unless it's a real error
+            if (error.code !== 'PGRST116') { // PGRST116 = JSON object requested, multiple (or no) rows returned
+                console.error('[Payment] Error fetching subscription:', error);
+            }
+            return 'free';
+        }
+
+        if (data?.status === 'active') {
+            return 'pro';
+        }
+
+        return 'free';
+
+    } catch (e) {
+        console.error('[Payment] Unexpected error checking subscription:', e);
+        return 'free';
+    }
 }

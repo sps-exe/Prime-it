@@ -98,4 +98,5 @@ export interface TaskState {
     userTier: 'free' | 'pro' | 'lifetime';
     setTier: (tier: 'free' | 'pro' | 'lifetime') => void;
     isPremium: () => boolean;
+    markDailyLogin: () => void;
 }

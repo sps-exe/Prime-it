@@ -2,8 +2,9 @@
 import { X, Check, Star, Zap, Infinity, Shield, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
-import { openCheckout, isPaymentConfigured } from '../../services/payment/lemonsqueezy';
+import { openCheckout } from '../../services/payment/lemonsqueezy';
 import { useUserStore } from '../../store/useUserStore';
+import QRCode from 'react-qr-code';
 
 interface PaywallModalProps {
     isOpen: boolean;
@@ -19,16 +20,28 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
     if (!isOpen) return null;
 
     const handleUpgrade = async () => {
+        const monthlyUrl = import.meta.env.VITE_LEMONSQUEEZY_MONTHLY_URL;
+        const yearlyUrl = import.meta.env.VITE_LEMONSQUEEZY_YEARLY_URL;
+
+        const checkoutUrl = billingCycle === 'yearly' ? yearlyUrl : monthlyUrl;
+
         // Check if payment is configured
-        if (!isPaymentConfigured()) {
-            alert("Payment integration coming soon! 🚀\n\nWe're finalizing our payment system. Check back soon!");
-            return;
+        if (!checkoutUrl || checkoutUrl.includes('YOUR-YEARLY-VARIANT-ID')) {
+            if (billingCycle === 'yearly' && !yearlyUrl) {
+                alert("Yearly plan not yet configured. Please try Monthly.");
+                setBillingCycle('monthly');
+                return;
+            }
+            if (!monthlyUrl) {
+                alert("Payment integration coming soon! 🚀\n\nWe're finalizing our payment system. Check back soon!");
+                return;
+            }
         }
 
         setIsLoading(true);
         try {
             await openCheckout({
-                checkoutUrl: import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_URL || '',
+                checkoutUrl: checkoutUrl || '',
                 userEmail: user?.email,
                 userId: user?.id
             });
@@ -146,9 +159,19 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
                                 {billingCycle === 'yearly' ? '$2.49' : '$4.99'}
                                 <span className="text-xs font-normal text-gray-500">/ mo</span>
                             </div>
-                            <div className="text-[10px] text-gray-500 mb-4">
+                            <div className="text-[10px] text-gray-500 mb-2">
                                 {billingCycle === 'yearly' ? 'Billed $29.99 yearly' : 'Billed monthly'}
                             </div>
+
+                            {/* PPP / Local Pricing Badge */}
+                            <div className="mb-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-[10px] font-medium text-emerald-400">Local Pricing Applied</span>
+                            </div>
+
                             <ul className="space-y-2 text-xs text-gray-300">
                                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> Everything in Starter</li>
                                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> AI Productivity Coach</li>
@@ -162,7 +185,7 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
                         <button
                             onClick={handleUpgrade}
                             disabled={isLoading}
-                            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg shadow-indigo-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg shadow-indigo-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 mb-4"
                         >
                             {isLoading ? (
                                 <>
@@ -176,6 +199,31 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
                                 </>
                             )}
                         </button>
+
+                        {/* Mobile Scan Option */}
+                        <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 mt-4">
+                            <div className="bg-white p-2 rounded-lg shrink-0">
+                                <QRCode
+                                    value={(billingCycle === 'yearly' ? import.meta.env.VITE_LEMONSQUEEZY_YEARLY_URL : import.meta.env.VITE_LEMONSQUEEZY_MONTHLY_URL) || 'https://prime-it.lemonsqueezy.com'}
+                                    size={64}
+                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                    viewBox={`0 0 256 256`}
+                                />
+                            </div>
+                            <div className="text-left flex-1">
+                                <div className="text-sm font-bold text-white mb-1">Scan to Pay</div>
+                                <div className="text-xs text-gray-400 leading-relaxed mb-2">
+                                    Use camera to pay on mobile via Apple Pay / Google Pay.
+                                </div>
+                                <div className="flex gap-2">
+                                    {/* Payment Icons (Text representation for now) */}
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">Card</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">PayPal</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">GPay/ApplePay</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <p className="text-center text-[10px] text-gray-500 mt-3">
                             Secure payment via LemonSqueezy. Cancel anytime.
                             <button className="text-gray-400 hover:text-white underline ml-1">Restore Purchases</button>

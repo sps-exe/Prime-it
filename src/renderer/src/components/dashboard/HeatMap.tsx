@@ -11,7 +11,9 @@ export function HeatMap() {
     const userStartDate = useMemo(() => {
         const dates = Object.keys(dailyFocusHistory).sort();
         if (dates.length > 0) {
-            return new Date(dates[0]);
+            // Parse YYYY-MM-DD manually to avoid UTC conversion
+            const [y, m, d] = dates[0].split('-').map(Number);
+            return new Date(y, m - 1, d);
         }
         return new Date(new Date().getFullYear(), 0, 1);
     }, [dailyFocusHistory]);
@@ -57,6 +59,7 @@ export function HeatMap() {
         let safetyCount = 0;
         while (iterDate <= endDate && safetyCount < 366) {
             const dateStr = formatDate(iterDate);
+            // Use dateStr directly to query history
             const minutes = Math.round((dailyFocusHistory[dateStr] || 0) / 60);
 
             if (minutes > 0) {
@@ -281,7 +284,7 @@ export function HeatMap() {
                                                                 'bg-green-500 border-green-300 text-black font-bold'
                                                 }`}
                                         >
-                                            <span className="relative z-10">{day.date ? new Date(day.date).getDate() : ''}</span>
+                                            <span className="relative z-10">{day.date ? day.date.split('-')[2].replace(/^0/, '') : ''}</span>
 
                                             {/* Glow effect for high intensity */}
                                             {day.intensity >= 3 && (

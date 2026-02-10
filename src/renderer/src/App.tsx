@@ -12,36 +12,38 @@ import SettingsPage from './pages/Settings/SettingsPage';
 import { OverlayLayout } from './layouts/OverlayLayout';
 import FocusModePage from './pages/Overlay/FocusModePage';
 import { useUserStore } from './store/useUserStore';
+import { useTaskStore } from './store/useTaskStore';
 import { supabase } from './lib/supabase';
+
+import { verifySubscription } from './services/payment/lemonsqueezy';
 
 import { UpdateNotification } from './components/UpdateNotification';
 
 function App() {
   const { isOnboarded, setUser, setSession, completeOnboarding } = useUserStore();
+  const markDailyLogin = useTaskStore((state) => state.markDailyLogin);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Mark daily login on app start
+  useEffect(() => {
+    markDailyLogin();
+  }, [markDailyLogin]);
 
   // Helper to sync subscription status
   const syncSubscription = async (user: any) => {
     try {
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('id', user.id)
-        .single();
+      const tier = await verifySubscription(user.id);
+      console.log(`[App] Syncing subscription for ${user.email}: ${tier.toUpperCase()}`);
 
-      const isPro = subscription?.status === 'active';
-      console.log(`[App] Syncing subscription for ${user.email}: ${isPro ? 'PRO' : 'FREE'}`);
-
-      const { setProfile } = useUserStore.getState(); // Access store directly to avoid stale closures if needed
+      const { setProfile } = useUserStore.getState();
       setProfile({
         email: user.email,
-        tier: isPro ? 'pro' : 'free'
+        tier: tier
       });
 
       // Sync to TaskStore (which controls UI features)
-      // We import dynamically to avoid circular dependencies if any, though here it's fine
       const { setTier } = await import('./store/useTaskStore').then(m => m.useTaskStore.getState());
-      setTier(isPro ? 'pro' : 'free');
+      setTier(tier);
 
     } catch (e) {
       console.error('[App] Error syncing subscription:', e);
@@ -51,18 +53,42 @@ function App() {
   // Check for existing Supabase session on app load
   useEffect(() => {
     const checkSession = async () => {
+      console.log('[App] Starting checkSession...');
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[App] Calling supabase.auth.getSession()');
+
+        // Timeout after 5 seconds to prevent infinite hanging
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timed out')), 5000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
+
+        console.log('[App] getSession result:', { session: !!session, error });
+
+        if (error) throw error;
+
         if (session?.user) {
           console.log('[App] Found existing session, auto-logging in...');
           setUser(session.user);
           setSession(session);
-          await syncSubscription(session.user); // Sync sub
+          try {
+            await syncSubscription(session.user); // Sync sub
+          } catch (subError) {
+            console.error('[App] Sync subscription warning:', subError);
+          }
           completeOnboarding();
+        } else {
+          console.log('[App] No session found.');
         }
       } catch (error) {
         console.error('[App] Error checking session:', error);
       } finally {
+        console.log('[App] Finished checking session, setting isCheckingSession=false');
         setIsCheckingSession(false);
       }
     };
