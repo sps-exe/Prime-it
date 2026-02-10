@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime It - Master Your Chaos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050507;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 3D Text Effect */
+        .hero-text {
+            text-shadow:
+                0 1px 0 #cccccc,
+                0 2px 0 #c9c9c9,
+                0 3px 0 #bbb,
+                0 4px 0 #b9b9b9,
+                0 5px 0 #aaa,
+                0 6px 1px rgba(0, 0, 0, .1),
+                0 0 5px rgba(0, 0, 0, .1),
+                0 1px 3px rgba(0, 0, 0, .3),
+                0 3px 5px rgba(0, 0, 0, .2),
+                0 5px 10px rgba(0, 0, 0, .25),
+                0 10px 10px rgba(0, 0, 0, .2),
+                0 20px 20px rgba(0, 0, 0, .15);
+        }
+
+        /* Glowing Gradient Background */
+        .glow-bg {
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+            filter: blur(60px);
+            z-index: -1;
+            animation: pulse-glow 8s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0.8;
+                transform: scale(1.1);
+            }
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3D Button */
+        .btn-3d {
+            transition: all 0.1s;
+            box-shadow: 0px 10px 0px 0px rgba(0, 0, 0, 0.5);
+            transform: translateY(0);
+        }
+
+        .btn-3d:active {
+            transform: translateY(10px);
+            box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0.5);
+        }
+
+        .perspective-container {
+            perspective: 1000px;
+        }
+
+        .tilted-image {
+            transform: rotateX(10deg) rotateY(-10deg) rotateZ(2deg);
+            box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+            transition: transform 0.5s ease;
+        }
+
+        .tilted-image:hover {
+            transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen relative">
+
+    <!-- Ambient Background -->
+    <div class="fixed inset-0 glow-bg"></div>
+    <div class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
+    <!-- Nav -->
+    <nav class="container mx-auto px-6 py-6 flex justify-between items-center relative z-10">
+        <div class="text-2xl font-bold tracking-tighter flex items-center gap-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg"></div>
+            Prime It
+        </div>
+        <div class="hidden md:flex gap-8 text-sm text-gray-400">
+            <a href="#features" class="hover:text-white transition-colors">Features</a>
+            <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+            <a href="#download" class="hover:text-white transition-colors">Download</a>
+        </div>
+        <a href="#download" class="px-5 py-2 rounded-full border border-white/10 hover:bg-white/5 transition text-sm">
+            Get Started
+        </a>
+    </nav>
+
+    <!-- Hero -->
+    <header class="container mx-auto px-6 pt-20 pb-32 text-center relative z-10">
+        <div
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-300 text-xs font-bold mb-8 animate-bounce delay-75">
+            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            V1.0 NOW AVAILABLE
+        </div>
+
+        <h1
+            class="text-6xl md:text-8xl font-black mb-6 tracking-tight leading-tight hero-text bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-500">
+            MASTER<br>YOUR CHAOS
+        </h1>
+
+        <p class="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            The all-in-one productivity command center. <span class="text-white font-medium">Tasks</span>, <span
+                class="text-white font-medium">Focus Timer</span>, and <span class="text-white font-medium">AI
+                Coaching</span>.
+        </p>
+
+        <div class="flex flex-col md:flex-row gap-6 justify-center items-center mb-24">
+            <a href="#"
+                class="btn-3d group relative px-8 py-4 bg-white text-black font-extrabold rounded-xl text-lg min-w-[200px] flex items-center justify-center gap-3">
+                <span>Download Mac</span>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg"
+                    class="w-5 h-5 opacity-80" alt="Apple">
+            </a>
+            <a href="#"
+                class="btn-3d px-8 py-4 bg-[#1a1a20] border-2 border-[#2a2a30] text-gray-300 hover:text-white font-bold rounded-xl text-lg min-w-[200px] flex items-center justify-center gap-3">
+                <span>Windows (Beta)</span>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Windows_logo_-_2012.svg"
+                    class="w-5 h-5 opacity-60 grayscale invert" alt="Windows">
+            </a>
+        </div>
+
+        <!-- 3D App Showcase -->
+        <div class="perspective-container max-w-5xl mx-auto">
+            <div class="tilted-image relative rounded-xl overflow-hidden border border-white/10 bg-[#0f0f13]">
+                <div
+                    class="aspect-[16/10] bg-gradient-to-br from-gray-900 to-black flex items-center justify-center text-gray-700 font-mono text-sm relative">
+                    <!-- Fake UI Mockup -->
+                    <div
+                        class="absolute inset-4 rounded-lg bg-[#1a1a20] border border-white/5 shadow-inner p-4 flex gap-4">
+                        <div class="w-16 bg-white/5 rounded-lg h-full"></div>
+                        <div class="flex-1 bg-white/5 rounded-lg h-full relative overflow-hidden">
+                            <div class="absolute top-4 left-4 right-4 h-8 bg-white/5 rounded"></div>
+                            <div class="absolute top-16 left-4 right-4 h-32 bg-white/5 rounded"></div>
+                            <div
+                                class="absolute bottom-4 left-4 right-4 h-24 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded border border-indigo-500/30">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-transparent"></div>
+                    <span class="z-10 opacity-50">App Screenshot Placeholder</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features -->
+    <section id="features" class="container mx-auto px-6 py-24">
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="glass-card p-8 rounded-3xl">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Hyper-Focus Mode</h3>
+                <p class="text-gray-400 leading-relaxed">Block distractions instantly. Our built-in Pomodoro timer puts
+                    your computer in lockdown mode until the task is done.</p>
+            </div>
+
+            <div class="glass-card p-8 rounded-3xl">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">AI Coach</h3>
+                <p class="text-gray-400 leading-relaxed">It's not just a chat bot. It analyzes your work patterns and
+                    gives you actionable advice to prevent burnout.</p>
+            </div>
+
+            <div class="glass-card p-8 rounded-3xl">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/20">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Deep Analytics</h3>
+                <p class="text-gray-400 leading-relaxed">Visual heatmaps of your productivity. Know exactly when you
+                    peak and when you crash.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="container mx-auto px-6 py-24 relative">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/10 to-transparent"></div>
+        <div class="text-center mb-16 relative z-10">
+            <h2 class="text-4xl font-bold mb-4">Invest in Yourself</h2>
+            <p class="text-gray-400">Less than the cost of a coffee a month.</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 relative z-10">
+            <!-- Free -->
+            <div class="glass-card p-8 rounded-3xl border border-white/5 opacity-80 hover:opacity-100">
+                <div class="text-xl font-bold mb-2 text-gray-300">Starter</div>
+                <div class="text-4xl font-black mb-6">$0</div>
+                <ul class="space-y-4 text-gray-400 mb-8">
+                    <li class="flex gap-3 text-sm"><span class="text-white">✓</span> Basic Task List</li>
+                    <li class="flex gap-3 text-sm"><span class="text-white">✓</span> Pomodoro Timer</li>
+                    <li class="flex gap-3 text-sm"><span class="text-white">✓</span> 7 Day History</li>
+                </ul>
+                <a href="#"
+                    class="block w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-center font-bold transition-colors">Download
+                    Free</a>
+            </div>
+
+            <!-- Pro -->
+            <div
+                class="glass-card p-8 rounded-3xl border-2 border-indigo-500/50 bg-indigo-900/10 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+                    POPULAR</div>
+                <div class="text-xl font-bold mb-2 text-indigo-300">Prime Professional</div>
+                <div class="text-4xl font-black mb-6">$5 <span class="text-lg font-normal text-gray-500">/ mo</span>
+                </div>
+                <ul class="space-y-4 text-gray-300 mb-8">
+                    <li class="flex gap-3 text-sm"><span class="text-indigo-400">✓</span> Everything in Starter</li>
+                    <li class="flex gap-3 text-sm"><span class="text-indigo-400">✓</span> <strong>AI Coach
+                            Access</strong></li>
+                    <li class="flex gap-3 text-sm"><span class="text-indigo-400">✓</span> Unlimited History</li>
+                    <li class="flex gap-3 text-sm"><span class="text-indigo-400">✓</span> Cloud Backup</li>
+                </ul>
+                <a href="#"
+                    class="block w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/25 text-center font-bold transition-colors">Start
+                    Free Trial</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center py-12 border-t border-white/5 text-gray-600 text-sm">
+        <p>&copy; 2026 Prime It Inc.</p>
+    </footer>
+
+</body>
+
+</html>
