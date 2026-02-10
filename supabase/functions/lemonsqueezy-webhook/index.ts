@@ -9,15 +9,51 @@ const supabase = createClient(
 
 serve(async (req) => {
     try {
-        // 1. Validate signature from LemonSqueezy (HMAC SHA256)
-        // Note: In production, verify 'X-Signature' header matches the payload + secret.
-        // For simplicity here, we'll trust the payload but log headers.
-
         if (req.method !== "POST") {
             return new Response("Method not allowed", { status: 405 });
         }
 
-        const payload = await req.json();
+        const secret = Deno.env.get("LEMONSQUEEZY_WEBHOOK_SECRET");
+        if (!secret) {
+            console.error("LEMONSQUEEZY_WEBHOOK_SECRET not set");
+            return new Response("Server misconfiguration", { status: 500 });
+        }
+
+        const signature = req.headers.get("x-signature");
+        if (!signature) {
+            return new Response("No signature", { status: 401 });
+        }
+
+        // Clone the request to read body text for verification AND json for processing
+        const clonedReq = req.clone();
+        const bodyText = await clonedReq.text();
+
+        // Verify Signature
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["verify"]
+        );
+
+        const verified = await crypto.subtle.verify(
+            "HMAC",
+            key,
+            hexToUint8Array(signature),
+            encoder.encode(bodyText)
+        );
+
+        if (!verified) {
+            console.error("Invalid signature");
+            return new Response("Invalid signature", { status: 401 });
+        }
+
+        console.log("Signature verified successfully");
+
+        // Parse JSON from the original request (or the verified text)
+        const payload = JSON.parse(bodyText);
         const eventName = payload.meta.event_name;
         const body = payload.data;
 
@@ -72,3 +108,8 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 })
+
+// Helper to convert hex string to Uint8Array for crypto.verify
+function hexToUint8Array(hexString: string) {
+    return new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+}

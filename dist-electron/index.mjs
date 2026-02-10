@@ -1,24 +1,24 @@
-import { contextBridge as i, ipcRenderer as o } from "electron";
-i.exposeInMainWorld("ipcRenderer", {
-  on(...e) {
-    const [n, t] = e;
-    return o.on(n, (r, ...l) => t(r, ...l));
+import { contextBridge, ipcRenderer } from "electron";
+contextBridge.exposeInMainWorld("ipcRenderer", {
+  on(...args) {
+    const [channel, listener] = args;
+    return ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
   },
-  off(...e) {
-    const [n, ...t] = e;
-    return o.off(n, ...t);
+  off(...args) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.off(channel, ...omit);
   },
-  send(...e) {
-    const [n, ...t] = e;
-    return o.send(n, ...t);
+  send(...args) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.send(channel, ...omit);
   },
-  invoke(...e) {
-    const [n, ...t] = e;
-    return o.invoke(n, ...t);
+  invoke(...args) {
+    const [channel, ...omit] = args;
+    return ipcRenderer.invoke(channel, ...omit);
   },
   // Store API
-  getStoreValue: (e) => o.invoke("get-store-value", e),
-  setStoreValue: (e, n) => o.invoke("set-store-value", e, n),
-  deleteStoreValue: (e) => o.invoke("delete-store-value", e),
-  clearStore: () => o.invoke("clear-store")
+  getStoreValue: (key) => ipcRenderer.invoke("get-store-value", key),
+  setStoreValue: (key, value) => ipcRenderer.invoke("set-store-value", key, value),
+  deleteStoreValue: (key) => ipcRenderer.invoke("delete-store-value", key),
+  clearStore: () => ipcRenderer.invoke("clear-store")
 });
