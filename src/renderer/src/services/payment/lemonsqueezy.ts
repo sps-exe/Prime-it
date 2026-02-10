@@ -80,7 +80,7 @@ import { supabase } from '../../lib/supabase';
  * This should be called on app load to sync tier
  */
 export async function verifySubscription(userId: string): Promise<'free' | 'pro' | 'lifetime'> {
-    console.log('[Payment] Checking subscription for user:', userId);
+    // console.log('[Payment] Checking subscription for user:', userId);
 
     try {
         const { data, error } = await supabase
