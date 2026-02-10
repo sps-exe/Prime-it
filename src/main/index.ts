@@ -119,6 +119,10 @@ import { autoUpdater } from 'electron-updater'
 // Configure logging
 autoUpdater.logger = console;
 // autoUpdater.logger.transports.file.level = "info";
+autoUpdater.autoDownload = false; // We want to ask the user first, or just notify them. Or keeping it true/false and handling events. 
+// Let's keep it simple: autoDownload=true (default) but notify when downloaded.
+// Actually, let's set it to true so it downloads in background, then we notify "Ready to install".
+autoUpdater.autoDownload = true;
 
 app.whenReady().then(() => {
   createWindow()
@@ -130,4 +134,42 @@ app.whenReady().then(() => {
     console.error('Failed to check for updates:', err);
   }
 })
+
+// Auto-Updater Events
+autoUpdater.on('checking-for-update', () => {
+  console.log('[Updater] Checking for update...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('[Updater] Update available:', info);
+  win?.webContents.send('update-available', info);
+});
+
+autoUpdater.on('update-not-available', () => {
+  console.log('[Updater] Update not available.');
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('[Updater] Error in auto-updater:', err);
+  win?.webContents.send('update-error', err.toString());
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log('[Updater] ' + log_message);
+  win?.webContents.send('update-download-progress', progressObj);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('[Updater] Update downloaded:', info);
+  win?.webContents.send('update-downloaded', info);
+});
+
+// IPC Handler to install update
+ipcMain.handle('install-update', () => {
+  console.log('[Updater] User requested install. Quitting and installing...');
+  autoUpdater.quitAndInstall();
+});
 

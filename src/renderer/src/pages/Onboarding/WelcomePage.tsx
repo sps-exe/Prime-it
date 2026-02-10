@@ -23,7 +23,7 @@ export default function WelcomePage() {
                         <CheckCircle2 className="w-8 h-8 text-white" />
                     </div>
 
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Prime it</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Prime-it</h1>
                     <p className="text-gray-500 text-sm">
                         Time to <span className="text-purple-600 font-semibold">focus</span> and prime your tasks.
                     </p>
@@ -51,7 +51,7 @@ export default function WelcomePage() {
 
                     <div className="pt-4 text-center">
                         <p className="text-[10px] text-gray-400">
-                            By clicking "Continue", you agree to Blitzit's <a href="#" className="underline">Terms</a> and <a href="#" className="underline">Privacy Policy</a>
+                            By clicking "Continue", you agree to Prime-it's <a href="#" className="underline">Terms</a> and <a href="#" className="underline">Privacy Policy</a>
                         </p>
                     </div>
                 </form>

@@ -69,7 +69,7 @@ export const useUserStore = create<UserState>()(
             setHasHydrated: (state) => set({ _hasHydrated: state }),
         }),
         {
-            name: 'blitzit-user-storage',
+            name: 'prime-it-user-storage',
             storage: createJSONStorage(() => storage),
             onRehydrateStorage: () => (state) => {
                 state?.setHasHydrated(true);

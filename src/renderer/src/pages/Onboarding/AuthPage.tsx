@@ -63,7 +63,7 @@ export default function AuthPage() {
             <div className="w-full max-w-md z-10 p-8">
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-black bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent mb-2">
-                        Prime it
+                        Prime-it
                         <span className="text-purple-500">.</span>
                     </h1>
                     <p className="text-gray-400">

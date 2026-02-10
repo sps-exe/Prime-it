@@ -560,12 +560,12 @@ function KanbanColumn({
                     </div>
                 </SortableContext>
 
-                {/* Today Column "Blitzit now" Button */}
+                {/* Today Column "Prime-it now" Button */}
                 {isToday && (
                     <div className="mt-4">
                         <Button
                             onClick={async () => {
-                                console.log('[Blitzit Now] Button clicked');
+                                console.log('[Prime-it Now] Button clicked');
                                 try {
                                     if ((window as any).ipcRenderer?.invoke) {
                                         await (window as any).ipcRenderer.invoke('set-overlay-mode', true);
@@ -577,7 +577,7 @@ function KanbanColumn({
                                 else window.location.hash = '#/focus';
                             }}
                             className="w-full bg-[#1a1a20] border border-white/10 !text-gray-400 hover:!text-white hover:border-white/20 shadow-sm rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all">
-                            Prime it now
+                            Prime-it now
                         </Button>
                     </div>
                 )}

@@ -7,7 +7,7 @@ export function LeftPromoPanel() {
             <div className="bg-gray-50 border border-gray-100 p-6 rounded-3xl">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-teal-400 to-blue-500"></div>
-                    <span className="font-bold text-gray-900">Prime it <span className="text-[10px] bg-green-100 text-green-700 px-1 py-0.5 rounded uppercase">Beta</span></span>
+                    <span className="font-bold text-gray-900">Prime-it <span className="text-[10px] bg-green-100 text-green-700 px-1 py-0.5 rounded uppercase">Beta</span></span>
                     <span className="text-xs text-gray-400 ml-auto">(v2.5.57)</span>
                 </div>
                 <p className="font-bold text-sm text-gray-900 mb-2">Plan: Free Trial</p>

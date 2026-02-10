@@ -450,7 +450,7 @@ export const useTaskStore = create<TaskState>()(
             }
         }),
         {
-            name: 'blitzit-task-storage',
+            name: 'prime-it-task-storage',
             storage: createJSONStorage(() => storage),
             version: 1, // Increment to force migration
             migrate: (persistedState: any, version: number) => {

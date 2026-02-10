@@ -176,7 +176,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="text-center text-xs text-gray-600">
-                v1.0.0 • Made with ❤️ by Blitz it
+                v1.0.0 • Made with ❤️ by Prime-it
             </div>
 
             <PaywallModal

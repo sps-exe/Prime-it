@@ -53,7 +53,7 @@ export const auth = {
             await supabase.auth.signOut();
 
             // 2. Clear User Store Persistence
-            await (window as any).ipcRenderer?.invoke('set-store-value', 'blitzit-user-storage', undefined);
+            await (window as any).ipcRenderer?.invoke('set-store-value', 'prime-it-user-storage', undefined);
 
             // 3. Reset Stores (Dynamically imported to avoid circular deps)
             const { useUserStore } = await import('../store/useUserStore');

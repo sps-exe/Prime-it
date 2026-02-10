@@ -14,6 +14,8 @@ import FocusModePage from './pages/Overlay/FocusModePage';
 import { useUserStore } from './store/useUserStore';
 import { supabase } from './lib/supabase';
 
+import { UpdateNotification } from './components/UpdateNotification';
+
 function App() {
   const { isOnboarded, setUser, setSession, completeOnboarding } = useUserStore();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -92,6 +94,7 @@ function App() {
 
   return (
     <HashRouter>
+      <UpdateNotification />
       <Routes>
         {/* Onboarding Flow */}
         <Route element={<OnboardingLayout />}>
