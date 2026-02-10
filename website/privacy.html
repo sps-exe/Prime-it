@@ -22,80 +22,55 @@
     <h1 class="text-4xl font-bold mb-8 text-white">Privacy Policy</h1>
     <p class="text-sm text-gray-500 mb-8">Last Updated: February 2026</p>
 
-    <div class="space-y-6 text-gray-400">
+    <div class="space-y-8 text-gray-400">
         <section>
-            <h2 class="text-xl font-bold text-white mb-2">1. Overview</h2>
+            <h2 class="text-2xl font-bold text-white mb-4">1. Overview</h2>
             <p>Prime-it ("the App") is a productivity tool designed to respect your privacy. We believe your data
-                belongs to you.</p>
+                belongs to you. This policy outlines what data we collect and how we use it.</p>
         </section>
 
         <section>
-            <h2 class="text-xl font-bold text-white mb-2">2. Data Collection & Storage</h2>
-            <ul class="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Local Data:</strong> Your tasks, settings, and focus history are stored locally on your
-                    device using `electron-store`. We do not have access to this data.</li>
-                <li><strong>Cloud Sync (Optional):</strong> If you create an account, we use <strong>Supabase</strong>
-                    (a third-party database provider) to sync your profile and subscription status.</li>
-                <li><strong>Analytics:</strong> We may collect anonymous usage data (e.g., "app opened", "feature used")
-                    to improve the App. This data is not linked to your personal identity.</li>
+            <h2 class="text-2xl font-bold text-white mb-4">2. Data Collection & Storage</h2>
+            <ul class="list-disc list-inside space-y-3 ml-2">
+                <li><strong class="text-indigo-400">Local Data:</strong> Your tasks, settings, and focus history are
+                    stored primarily on your local device. We do not have access to this raw data by default.</li>
+                <li><strong class="text-indigo-400">Cloud Sync (Encrypted):</strong> If you enable Cloud Sync, your
+                    tasks and lists are stored securely in our database (Supabase). This data is protected by Row Level
+                    Security (RLS), meaning only you can access it.</li>
+                <li><strong class="text-indigo-400">Account Info:</strong> We store your email address and subscription
+                    status to manage your Pro access.</li>
             </ul>
         </section>
 
         <section>
-            <h2 class="text-xl font-bold text-white mb-2">3. Third-Party Services</h2>
-            <p>We use the following trusted third-party services:</p>
+            <h2 class="text-2xl font-bold text-white mb-4">3. Third-Party Services</h2>
+            <p class="mb-4">We partner with trusted services to provide Prime-it's features:</p>
+            <ul class="list-disc list-inside space-y-3 ml-2">
+                <li><strong class="text-white">Supabase:</strong> Provides secure authentication and database hosting.
+                </li>
+                <li><strong class="text-white">LemonSqueezy:</strong> Handles all payments and subscriptions. We
+                    <strong>never</strong> see or store your credit card information.</li>
+                <li><strong class="text-white">OpenAI:</strong> Powers the "AI Coach". When you use this feature, your
+                    task data is sent to OpenAI for processing. This data is <strong>not</strong> used to train their
+                    models.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold text-white mb-4">4. Your Rights</h2>
+            <p>You maintain full ownership of your data.</p>
             <ul class="list-disc list-inside space-y-2 ml-4 mt-2">
-                <li><strong>Supabase:</strong> For authentication and database hosting.</li>
-                <li><strong>LemonSqueezy:</strong> For processing payments. We do not store your credit card
-                    information.</li>
-                <li><strong>OpenAI:</strong> If you use the AI Coach feature, your chat messages are sent to OpenAI for
-                    processing. They are not used to train OpenAI's models (via API).</li>
+                <li>You can export or delete your account at any time.</li>
+                <li>You can request a copy of all data synced to our cloud.</li>
+                <li>Local data can be wiped by uninstalling the application.</li>
             </ul>
         </section>
 
         <section>
-            <h2 class="text-xl font-bold text-white mb-2">4. Your Rights</h2>
-            <p>You can request the deletion of your account and cloud data at any time by contacting us. Local data can
-                be deleted by uninstalling the App and clearing your application support folder.</p>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-white mb-2">5. Contact</h2>
-            <p>For any privacy-related questions, please contact us at <a href="mailto:support@prime-it.app"
-                    class="text-indigo-400 hover:text-indigo-300">support@prime-it.app</a>.</p>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-white mb-2">2. Data Collection</h2>
-            <ul class="list-disc pl-5 space-y-2">
-                <li><strong>Local Data:</strong> Task lists and timer settings are stored locally on your device using
-                    Electron Store.</li>
-                <li><strong>Account Data:</strong> If you create an account, we store your email and subscription status
-                    via Supabase (our database provider).</li>
-                <li><strong>Payments:</strong> All payments are processed securely by LemonSqueezy. We do not store your
-                    credit card information.</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-white mb-2">3. AI Features</h2>
-            <p>When you use the AI Coach, your task descriptions and productivity stats are sent to OpenAI's API to
-                generate insights. This data is not used to train OpenAI's models (tier dependent) and is transient.</p>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-white mb-2">4. Third-Party Services</h2>
-            <p>We use the following trusted services:</p>
-            <ul class="list-disc pl-5">
-                <li><strong>Supabase:</strong> Authentication & Database</li>
-                <li><strong>LemonSqueezy:</strong> Payments & Subscriptions</li>
-                <li><strong>OpenAI:</strong> Intelligence features</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-white mb-2">5. Contact</h2>
-            <p>For privacy questions, please contact us at support@prime-it.app (or your preferred contact method).</p>
+            <h2 class="text-2xl font-bold text-white mb-4">5. Contact Us</h2>
+            <p>If you have any questions about this policy, please reach out to us at <a
+                    href="mailto:support@prime-it.app"
+                    class="text-indigo-400 hover:text-indigo-300 underline">support@prime-it.app</a>.</p>
         </section>
     </div>
 </body>
