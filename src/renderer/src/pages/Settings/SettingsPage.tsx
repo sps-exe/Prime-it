@@ -13,16 +13,16 @@ export default function SettingsPage() {
 
     // Load API key on mount
     useEffect(() => {
-        const storedKey = localStorage.getItem('openai_api_key');
+        const storedKey = localStorage.getItem('gemini_api_key');
         if (storedKey) setApiKey(storedKey);
     }, []);
 
     const handleSaveKey = () => {
-        if (apiKey.trim().startsWith('sk-')) {
-            localStorage.setItem('openai_api_key', apiKey.trim());
+        if (apiKey.trim().startsWith('AIza') && apiKey.trim().length > 20) {
+            localStorage.setItem('gemini_api_key', apiKey.trim());
             alert('API Key saved successfully!');
         } else {
-            alert('Invalid API key format');
+            alert('Invalid API key format (should start with AIza...)');
         }
     };
 
@@ -115,7 +115,7 @@ export default function SettingsPage() {
                 <div className="bg-[#1a1a20] rounded-2xl border border-white/5 p-6">
                     <div className="flex items-start gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">OpenAI API Key</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Gemini API Key</label>
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
                                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -123,7 +123,7 @@ export default function SettingsPage() {
                                         type="password"
                                         value={apiKey}
                                         onChange={(e) => setApiKey(e.target.value)}
-                                        placeholder="sk-..."
+                                        placeholder="AIza..."
                                         className="w-full bg-black/30 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm focus:border-emerald-500/50 focus:outline-none"
                                     />
                                 </div>
@@ -135,8 +135,8 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
-                                Required for AI Coach. stored locally.
-                                <button onClick={() => window.open('https://platform.openai.com/api-keys', '_blank')} className="text-emerald-400 hover:underline ml-1">Get key</button>
+                                Free · Required for AI Coach. Stored locally.
+                                <button onClick={() => (window as any).ipcRenderer?.invoke('open-external', 'https://aistudio.google.com/apikey')} className="text-emerald-400 hover:underline ml-1">Get free key</button>
                             </p>
                         </div>
                     </div>
@@ -182,7 +182,6 @@ export default function SettingsPage() {
             <PaywallModal
                 isOpen={isPaywallOpen}
                 onClose={() => setIsPaywallOpen(false)}
-                trigger="Export Data"
             />
         </div>
     );

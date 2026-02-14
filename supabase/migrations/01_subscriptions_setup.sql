@@ -1,5 +1,5 @@
 -- 1. Create the subscriptions table
-create table public.subscriptions (
+create table if not exists public.subscriptions (
   id uuid references auth.users not null primary key,
   status text not null, -- 'active', 'cancelled', 'expired', 'past_due'
   variant_id text, -- The ID of the product or variant from LemonSqueezy
@@ -14,6 +14,7 @@ create table public.subscriptions (
 alter table public.subscriptions enable row level security;
 
 -- 3. Create Policy: Users can only read their own subscription
+drop policy if exists "Users can read own subscription" on public.subscriptions;
 create policy "Users can read own subscription" on public.subscriptions
   for select using (auth.uid() = id);
 
@@ -30,6 +31,7 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists on_subscription_updated on public.subscriptions;
 create trigger on_subscription_updated
   before update on public.subscriptions
   for each row execute procedure public.handle_updated_at();

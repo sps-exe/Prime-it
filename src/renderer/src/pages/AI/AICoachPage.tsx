@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Sparkles, Bot, User, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { chatWithAI, ChatMessage } from '../../services/ai/openai';
+import { chatWithAI, hasApiKey, saveApiKey, ChatMessage } from '../../services/ai/gemini';
 import { gatherUserContext } from '../../services/ai/context';
 
 export default function AICoachPage() {
@@ -36,14 +36,14 @@ export default function AICoachPage() {
     const [apiKeyInput, setApiKeyInput] = useState('');
 
     const handleSaveKey = () => {
-        if (apiKeyInput.trim().startsWith('sk-')) {
-            localStorage.setItem('openai_api_key', apiKeyInput.trim());
+        const trimmed = apiKeyInput.trim();
+        if (trimmed.startsWith('AIza') && trimmed.length > 20) {
+            saveApiKey(trimmed);
             setShowKeyInput(false);
             setApiKeyInput('');
-            // Retry the connection message
             setMessages(prev => [...prev, { role: 'assistant', content: "✅ Key saved! I'm ready to help. What's the plan?" }]);
         } else {
-            alert("That doesn't look like a valid OpenAI key (starts with sk-...)");
+            alert("That doesn't look like a valid Gemini API key (starts with AIza...)");
         }
     };
 
@@ -72,10 +72,16 @@ export default function AICoachPage() {
         } catch (error: any) {
             console.error('Chat Error:', error);
             if (error.message === 'MISSING_API_KEY' || error.status === 401) {
-                setMessages(prev => [...prev, { role: 'assistant', content: "🔒 I need an OpenAI API key to function." }]);
+                setMessages(prev => [...prev, { role: 'assistant', content: "🔑 I need a Gemini API key to function. It's free!" }]);
+                setShowKeyInput(true);
+            } else if (error.status === 429) {
+                setMessages(prev => [...prev, { role: 'assistant', content: "⏳ Your API key's quota is exhausted. This usually means your Google Cloud project hit its daily limit. Try creating a **new API key** from a new project at aistudio.google.com/apikey, or wait until tomorrow for the limit to reset." }]);
+                setShowKeyInput(true);
+            } else if (error.status === 400) {
+                setMessages(prev => [...prev, { role: 'assistant', content: "❌ Invalid API key. Please check your key and try again." }]);
                 setShowKeyInput(true);
             } else {
-                setMessages(prev => [...prev, { role: 'assistant', content: "⚠️ Something went wrong. Please try again." }]);
+                setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${error?.message || 'Something went wrong'}. Please try again.` }]);
             }
         } finally {
             setIsLoading(false);
@@ -107,7 +113,9 @@ export default function AICoachPage() {
                             <h1 className="text-sm font-bold">AI Coach</h1>
                             <div className="flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[10px] text-emerald-400 font-medium">Online</span>
+                                <span className="text-[10px] text-emerald-400 font-medium">
+                                    {hasApiKey() ? 'Online' : 'Needs Setup'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -192,7 +200,7 @@ export default function AICoachPage() {
                 </div>
                 <div className="text-center mt-2">
                     <p className="text-[10px] text-gray-600">
-                        AI can make mistakes. Review generated plans.
+                        Powered by Gemini · AI can make mistakes. Review generated plans.
                     </p>
                 </div>
             </div>
@@ -207,24 +215,24 @@ export default function AICoachPage() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold">Connect AI Coach</h3>
-                                <p className="text-xs text-gray-400">One-time setup to enable AI features</p>
+                                <p className="text-xs text-emerald-400 font-medium">100% Free · No credit card needed</p>
                             </div>
                         </div>
 
                         {/* Instructions */}
                         <div className="bg-black/20 rounded-xl p-4 mb-4 text-xs text-gray-300 space-y-2">
-                            <p className="font-medium text-white">How to get your API key:</p>
+                            <p className="font-medium text-white">Get your free API key (30 seconds):</p>
                             <ol className="list-decimal list-inside space-y-1 text-gray-400">
-                                <li>Go to <button onClick={() => (window as any).ipcRenderer?.invoke('open-external', 'https://platform.openai.com/api-keys')} className="text-emerald-400 hover:underline">platform.openai.com/api-keys</button></li>
-                                <li>Create an account or sign in</li>
-                                <li>Click "Create new secret key"</li>
+                                <li>Go to <button onClick={() => (window as any).ipcRenderer?.invoke('open-external', 'https://aistudio.google.com/apikey')} className="text-emerald-400 hover:underline">aistudio.google.com/apikey</button></li>
+                                <li>Sign in with your Google account</li>
+                                <li>Click "Create API key"</li>
                                 <li>Copy and paste it below</li>
                             </ol>
                         </div>
 
                         <input
                             type="password"
-                            placeholder="sk-..."
+                            placeholder="AIza..."
                             value={apiKeyInput}
                             onChange={(e) => setApiKeyInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSaveKey()}

@@ -53,10 +53,8 @@ function App() {
   // Check for existing Supabase session on app load
   useEffect(() => {
     const checkSession = async () => {
-      // console.log('[App] Starting checkSession...');
+      console.log('[App] Starting checkSession...');
       try {
-        // console.log('[App] Calling supabase.auth.getSession()');
-
         // Timeout after 5 seconds to prevent infinite hanging
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) =>
@@ -68,27 +66,35 @@ function App() {
           timeoutPromise
         ]) as any;
 
-        // console.log('[App] getSession result:', { session: !!session, error });
-
         if (error) throw error;
 
         if (session?.user) {
-          // console.log('[App] Found existing session, auto-logging in...');
+          console.log('[App] Found existing session, syncing...');
           setUser(session.user);
           setSession(session);
           try {
-            await syncSubscription(session.user); // Sync sub
+            await syncSubscription(session.user);
           } catch (subError) {
             console.error('[App] Sync subscription warning:', subError);
           }
           completeOnboarding();
-        } else {
-          // console.log('[App] No session found.');
         }
       } catch (error) {
         console.error('[App] Error checking session:', error);
+
+        // FALLBACK: If session check failed but we have a persisted user in the store,
+        // still try to sync their subscription via direct REST API
+        const { user: persistedUser } = useUserStore.getState();
+        if (persistedUser?.id) {
+          console.log('[App] Session timed out, but found persisted user. Syncing subscription...');
+          try {
+            await syncSubscription(persistedUser);
+            completeOnboarding();
+          } catch (subError) {
+            console.error('[App] Fallback sync failed:', subError);
+          }
+        }
       } finally {
-        // console.log('[App] Finished checking session, setting isCheckingSession=false');
         setIsCheckingSession(false);
       }
     };
@@ -96,7 +102,7 @@ function App() {
     checkSession();
 
     // Listen for auth state changes (e.g., sign in, sign out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       // console.log('[App] Auth state changed:', event);
       if (session?.user) {
         setUser(session.user);

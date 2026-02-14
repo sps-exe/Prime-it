@@ -1,13 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
 const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     try {
         if (req.method !== "POST") {
             return new Response("Method not allowed", { status: 405 });

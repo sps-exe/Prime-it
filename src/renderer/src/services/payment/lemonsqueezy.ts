@@ -77,27 +77,54 @@ import { supabase } from '../../lib/supabase';
 
 /**
  * Verify subscription status from Supabase
- * This should be called on app load to sync tier
+ * Uses direct REST API to avoid Supabase JS client session timeout issues
  */
 export async function verifySubscription(userId: string): Promise<'free' | 'pro' | 'lifetime'> {
-    // console.log('[Payment] Checking subscription for user:', userId);
+    console.log('[Payment] Checking subscription for user:', userId);
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    // Try to get user's access token, with timeout
+    let accessToken = SUPABASE_KEY;
+    try {
+        const { data: sessionData } = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        ]);
+        if (sessionData?.session?.access_token) {
+            accessToken = sessionData.session.access_token;
+        }
+    } catch {
+        console.log('[Payment] Session timeout, using anon key');
+    }
 
     try {
-        const { data, error } = await supabase
-            .from('subscriptions')
-            .select('status')
-            .eq('id', userId)
-            .single();
-
-        if (error) {
-            // It's normal to have no subscription, don't log as error unless it's a real error
-            if (error.code !== 'PGRST116') { // PGRST116 = JSON object requested, multiple (or no) rows returned
-                console.error('[Payment] Error fetching subscription:', error);
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/check_subscription`,
+            {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ p_user_id: userId })
             }
+        );
+
+        if (!res.ok) {
+            console.log('[Payment] Subscription check returned:', res.status);
             return 'free';
         }
 
-        if (data?.status === 'active') {
+        const data = await res.json();
+        console.log('[Payment] Subscription data:', data);
+
+        if (data && data.status === 'active') {
+            if (data.variant_id === 'lifetime_license') {
+                return 'lifetime';
+            }
             return 'pro';
         }
 

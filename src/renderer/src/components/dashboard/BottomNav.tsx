@@ -63,7 +63,6 @@ export function BottomNav() {
             <PaywallModal
                 isOpen={isPaywallOpen}
                 onClose={() => setIsPaywallOpen(false)}
-                trigger="AI Coach"
             />
         </>
     );

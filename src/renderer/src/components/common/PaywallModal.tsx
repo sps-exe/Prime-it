@@ -1,59 +1,136 @@
 
-import { X, Check, Star, Zap, Infinity, Shield, Loader2 } from 'lucide-react';
+import { X, Check, Star, Shield, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
-import { openCheckout } from '../../services/payment/lemonsqueezy';
 import { useUserStore } from '../../store/useUserStore';
 import QRCode from 'react-qr-code';
+import { supabase } from '../../lib/supabase';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 interface PaywallModalProps {
     isOpen: boolean;
     onClose: () => void;
-    trigger?: string; // What triggered the paywall (e.g., "AI Coach", "Unlimited History")
 }
 
-export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+export function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [licenseKey, setLicenseKey] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
     const user = useUserStore((state) => state.user);
 
     if (!isOpen) return null;
 
-    const handleUpgrade = async () => {
-        const monthlyUrl = import.meta.env.VITE_LEMONSQUEEZY_MONTHLY_URL;
-        const yearlyUrl = import.meta.env.VITE_LEMONSQUEEZY_YEARLY_URL;
-
-        const checkoutUrl = billingCycle === 'yearly' ? yearlyUrl : monthlyUrl;
-
-        // Check if payment is configured
-        if (!checkoutUrl || checkoutUrl.includes('YOUR-YEARLY-VARIANT-ID')) {
-            if (billingCycle === 'yearly' && !yearlyUrl) {
-                alert("Yearly plan not yet configured. Please try Monthly.");
-                setBillingCycle('monthly');
-                return;
-            }
-            if (!monthlyUrl) {
-                alert("Payment integration coming soon! 🚀\n\nWe're finalizing our payment system. Check back soon!");
-                return;
-            }
+    const handleVerifyKey = async () => {
+        if (!licenseKey.trim()) {
+            setError('Please enter a license key');
+            return;
         }
 
         setIsLoading(true);
+        setError('');
+        console.log('[License] Starting verification for key:', licenseKey.trim());
+
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        // Get the current session token (if available)
+        let accessToken = SUPABASE_KEY; // fallback to anon key
         try {
-            await openCheckout({
-                checkoutUrl: checkoutUrl || '',
-                userEmail: user?.email,
-                userId: user?.id
-            });
-            // Close modal after opening checkout
-            onClose();
-        } catch (error) {
-            console.error('Checkout error:', error);
-            alert("Couldn't open checkout. Please try again.");
+            const { data: sessionData } = await Promise.race([
+                supabase.auth.getSession(),
+                new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+            ]);
+            if (sessionData?.session?.access_token) {
+                accessToken = sessionData.session.access_token;
+                console.log('[License] Using user session token');
+            } else {
+                console.log('[License] No session, using anon key');
+            }
+        } catch {
+            console.log('[License] Session fetch timed out, using anon key');
+        }
+
+        const headers: Record<string, string> = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        };
+
+        try {
+            // 1. Check if key exists and is active
+            console.log('[License] Step 1: Checking key via REST...');
+            const queryUrl = `${SUPABASE_URL}/rest/v1/license_keys?select=key,status&key=eq.${encodeURIComponent(licenseKey.trim())}`;
+            console.log('[License] Query URL:', queryUrl);
+            const checkRes = await fetch(queryUrl, { headers });
+            const rawText = await checkRes.text();
+            console.log('[License] Step 1 raw response:', checkRes.status, rawText);
+
+            let keys: any[] = [];
+            try { keys = JSON.parse(rawText); } catch { keys = []; }
+            console.log('[License] Step 1 parsed:', keys);
+
+            if (!keys || keys.length === 0) {
+                setError('Invalid license key');
+                setIsLoading(false);
+                return;
+            }
+
+            if (keys[0].status !== 'active') {
+                setError('This license key has already been used');
+                setIsLoading(false);
+                return;
+            }
+
+            // 2+3. Claim key AND grant subscription via RPC (bypasses RLS)
+            console.log('[License] Step 2: Claiming key via RPC...');
+            const rpcRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/rpc/claim_license_key`,
+                {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        p_key: licenseKey.trim(),
+                        p_user_id: user?.id
+                    })
+                }
+            );
+            const rpcResult = await rpcRes.text();
+            console.log('[License] Step 2 RPC result:', rpcRes.status, rpcResult);
+
+            if (!rpcRes.ok) {
+                console.error('[License] RPC error:', rpcResult);
+                setError('Error claiming key. Please try again.');
+                setIsLoading(false);
+                return;
+            }
+
+            if (rpcResult === 'false') {
+                setError('Key could not be claimed. It may have already been used.');
+                setIsLoading(false);
+                return;
+            }
+
+            console.log('[License] SUCCESS!');
+            setSuccess(true);
+            setTimeout(() => {
+                onClose();
+                window.location.reload();
+            }, 2000);
+
+        } catch (e) {
+            console.error('[License] Unexpected error:', e);
+            setError('An unexpected error occurred');
         } finally {
             setIsLoading(false);
         }
     };
+
+    const upiId = import.meta.env.VITE_UPI_ID || 'your-upi@okaxis';
+    const payeeName = import.meta.env.VITE_PAYEE_NAME || 'Prime-it';
+    const amount = '399'; // Example fixed amount in INR
+    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR`;
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -67,7 +144,7 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
                     <X className="w-5 h-5" />
                 </button>
 
-                {/* Left Side - Visual/Value Prop */}
+                {/* Left Side - Visual */}
                 <div className="w-full md:w-2/5 bg-gradient-to-br from-indigo-600 to-purple-700 p-8 flex flex-col text-white relative overflow-hidden">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
@@ -76,159 +153,103 @@ export function PaywallModal({ isOpen, onClose, trigger }: PaywallModalProps) {
                     <div className="relative z-10 h-full flex flex-col">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md self-start mb-6 border border-white/10">
                             <Star className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
-                            <span className="text-xs font-bold tracking-wide">PREMIUM UPGRADE</span>
+                            <span className="text-xs font-bold tracking-wide">LIFETIME ACCESS</span>
                         </div>
-
                         <h2 className="text-3xl font-bold mb-4 leading-tight">
-                            Unlock your full<br />productivity potential.
+                            One payment.<br />Forever access.
                         </h2>
-
-                        <p className="text-indigo-100 text-sm leading-relaxed mb-auto opacity-90">
-                            {trigger ? `The ${trigger} feature is available exclusively on the Pro plan.` : "Get access to AI insights, unlimited history, and advanced productivity tools."}
+                        <p className="text-indigo-100 text-sm leading-relaxed mb-8 opacity-90">
+                            Unlock AI coaching, unlimited history, and cloud sync with a single purchase.
                         </p>
 
-                        <div className="mt-8 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                                    <Zap className="w-5 h-5 text-yellow-300" />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm">AI Coach</div>
-                                    <div className="text-xs text-indigo-200">Personalized daily insights</div>
-                                </div>
+                        <div className="mt-auto bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10">
+                            <div className="flex items-center gap-2 mb-2 text-sm font-bold">
+                                <Shield className="w-4 h-4 text-emerald-300" />
+                                100% Secure
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                                    <Infinity className="w-5 h-5 text-blue-300" />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm">Unlimited History</div>
-                                    <div className="text-xs text-indigo-200">Access all past sessions</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                                    <Shield className="w-5 h-5 text-emerald-300" />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm">Data Backup</div>
-                                    <div className="text-xs text-indigo-200">Cloud sync & export</div>
-                                </div>
-                            </div>
+                            <p className="text-xs text-indigo-100 opacity-80">
+                                Direct payment via your trusted UPI app. No subscription fees.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Side - Pricing & Plans */}
+                {/* Right Side - Manual Payment */}
                 <div className="w-full md:w-3/5 p-8 bg-[#1a1a20] flex flex-col">
-                    <div className="flex items-center justify-center mb-8">
-                        <div className="bg-[#25252e] p-1 rounded-xl inline-flex relative">
-                            <button
-                                onClick={() => setBillingCycle('monthly')}
-                                className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${billingCycle === 'monthly' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                Monthly
-                            </button>
-                            <button
-                                onClick={() => setBillingCycle('yearly')}
-                                className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${billingCycle === 'yearly' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                Yearly <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-50%</span>
-                            </button>
+
+                    {success ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in">
+                            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
+                                <Check className="w-8 h-8 text-emerald-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">Upgrade Successful!</h3>
+                            <p className="text-gray-400">Welcome to Prime-it Pro. Refreshing...</p>
                         </div>
-                    </div>
-
-                    {/* Pricing Cards */}
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        {/* Free Plan */}
-                        <div className="border border-white/5 rounded-2xl p-5 bg-white/5 opacity-60 hover:opacity-100 transition-opacity cursor-default">
-                            <div className="text-sm font-medium text-gray-400 mb-1">Starter</div>
-                            <div className="text-2xl font-bold text-white mb-4">$0 <span className="text-xs font-normal text-gray-500">/ forever</span></div>
-                            <ul className="space-y-2 text-xs text-gray-400">
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-gray-500" /> Core Task Management</li>
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-gray-500" /> Basic Pomodoro Timer</li>
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-gray-500" /> 7-Day History</li>
-                            </ul>
-                        </div>
-
-                        {/* Pro Plan */}
-                        <div className="border-2 border-indigo-500/50 rounded-2xl p-5 bg-indigo-500/5 relative overflow-hidden group hover:border-indigo-500 transition-colors">
-                            <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">RECOMMENDED</div>
-                            <div className="text-sm font-medium text-indigo-300 mb-1">Professional</div>
-                            <div className="text-2xl font-bold text-white mb-1">
-                                {billingCycle === 'yearly' ? '$2.49' : '$4.99'}
-                                <span className="text-xs font-normal text-gray-500">/ mo</span>
-                            </div>
-                            <div className="text-[10px] text-gray-500 mb-2">
-                                {billingCycle === 'yearly' ? 'Billed $29.99 yearly' : 'Billed monthly'}
+                    ) : (
+                        <div className="flex flex-col h-full">
+                            <div className="text-center mb-6">
+                                <h3 className="text-xl font-bold text-white">Scan to Upgrade</h3>
+                                <p className="text-gray-400 text-sm mt-1">Pay ₹{amount} via any UPI App</p>
                             </div>
 
-                            {/* PPP / Local Pricing Badge */}
-                            <div className="mb-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span className="text-[10px] font-medium text-emerald-400">Local Pricing Applied</span>
-                            </div>
-
-                            <ul className="space-y-2 text-xs text-gray-300">
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> Everything in Starter</li>
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> AI Productivity Coach</li>
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> Unlimited History</li>
-                                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400" /> Advanced Analytics</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="mt-auto">
-                        <button
-                            onClick={handleUpgrade}
-                            disabled={isLoading}
-                            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg shadow-indigo-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 mb-4"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Opening checkout...
-                                </>
-                            ) : (
-                                <>
-                                    <Zap className="w-4 h-4 fill-white" />
-                                    {billingCycle === 'yearly' ? 'Start Annual Plan' : 'Start Monthly Plan'}
-                                </>
-                            )}
-                        </button>
-
-                        {/* Mobile Scan Option */}
-                        <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 mt-4">
-                            <div className="bg-white p-2 rounded-lg shrink-0">
-                                <QRCode
-                                    value={(billingCycle === 'yearly' ? import.meta.env.VITE_LEMONSQUEEZY_YEARLY_URL : import.meta.env.VITE_LEMONSQUEEZY_MONTHLY_URL) || 'https://prime-it.lemonsqueezy.com'}
-                                    size={64}
-                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                    viewBox={`0 0 256 256`}
-                                />
-                            </div>
-                            <div className="text-left flex-1">
-                                <div className="text-sm font-bold text-white mb-1">Scan to Pay</div>
-                                <div className="text-xs text-gray-400 leading-relaxed mb-2">
-                                    Use camera to pay on mobile via Apple Pay / Google Pay.
+                            <div className="flex flex-col md:flex-row gap-8 items-center justify-center flex-1">
+                                {/* QR Code */}
+                                <div className="bg-white p-3 rounded-xl shadow-lg shrink-0">
+                                    <QRCode
+                                        value={upiUrl}
+                                        size={160}
+                                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        viewBox={`0 0 256 256`}
+                                    />
+                                    <div className="text-center mt-2 text-black font-bold text-xs">
+                                        ₹{amount}
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {/* Payment Icons (Text representation for now) */}
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">Card</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">PayPal</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-gray-300">GPay/ApplePay</span>
+
+                                {/* Divider */}
+                                <div className="hidden md:flex h-32 w-px bg-white/10"></div>
+
+                                {/* Manual Activation */}
+                                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-xs text-gray-400 space-y-2 mb-4">
+                                    <p className="font-bold text-white mb-1">📝 Next Steps:</p>
+                                    <ol className="list-decimal list-inside space-y-1">
+                                        <li>Scan & Pay ₹{amount} via UPI</li>
+                                        <li>Take a screenshot of payment</li>
+                                        <li>Email it to <span className="text-indigo-400 font-medium select-all">sps2962007@gmail.com</span></li>
+                                        <li>You'll receive a License Key shortly!</li>
+                                    </ol>
                                 </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-gray-400 mb-1.5 block">
+                                        Enter License Key
+                                    </label>
+                                    <Input
+                                        placeholder="PRO-XXXX-XXXX"
+                                        value={licenseKey}
+                                        onChange={(e) => setLicenseKey(e.target.value)}
+                                        className="bg-black/30 border-white/10 focus:border-indigo-500 font-mono text-center uppercase tracking-widest"
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="text-red-400 text-xs text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <Button
+                                    onClick={handleVerifyKey}
+                                    disabled={isLoading || !licenseKey}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-500"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Activate License'}
+                                </Button>
+
+
                             </div>
                         </div>
-
-                        <p className="text-center text-[10px] text-gray-500 mt-3">
-                            Secure payment via LemonSqueezy. Cancel anytime.
-                            <button className="text-gray-400 hover:text-white underline ml-1">Restore Purchases</button>
-                        </p>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>,

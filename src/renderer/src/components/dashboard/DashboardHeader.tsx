@@ -144,7 +144,6 @@ export function DashboardHeader() {
             <PaywallModal
                 isOpen={isPaywallOpen}
                 onClose={() => setIsPaywallOpen(false)}
-                trigger="Dashboard Upgrade"
             />
         </>
     );
